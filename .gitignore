@@ -1,0 +1,8 @@
+# Données OSM brutes : régénérables via outils/osm_vers_jeu.py
+references/osm/
+# Godot / exports
+.godot/
+*.import
+export/
+build/
+.DS_Store

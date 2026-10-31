@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Niger City</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --or: #e05206; --vert: #0db02b; --blanc: #f6f2ea; --noir: #0b0b0d; --jaune: #ffd23a; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: var(--blanc); font-family: Inter, system-ui, sans-serif; }
+  canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  [hidden] { display: none !important; }
+
+  /* ---------- MENU ---------- */
+  #menu { position: fixed; inset: 0; overflow-y: auto; z-index: 20;
+    background: radial-gradient(1200px 600px at 75% 15%, rgba(224,82,6,.45), transparent 60%),
+                radial-gradient(900px 600px at 10% 100%, rgba(13,176,43,.35), transparent 60%),
+                linear-gradient(160deg, #1a0f08 0%, #2a1608 45%, #0b0b0d 100%); }
+  #menu .wrap { max-width: 1180px; margin: 0 auto; padding: 34px 20px 40px; }
+  .brand { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+  .brand h1 { font-family: 'Bebas Neue', Impact, sans-serif; font-size: clamp(64px, 11vw, 140px); line-height: .82; margin: 0; letter-spacing: 2px;
+    background: linear-gradient(180deg, #fff 0%, #ffe0b8 55%, var(--or) 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 6px 0 rgba(0,0,0,.6)); }
+  .brand .tag { font-family: 'Bebas Neue', Impact; font-size: 28px; color: var(--jaune); letter-spacing: 3px; padding-bottom: 10px; }
+  .flag { display: inline-flex; flex-direction: column; width: 54px; height: 36px; border: 2px solid rgba(255,255,255,.6); margin-bottom: 14px; position: relative; }
+  .flag i { flex: 1; } .flag i:nth-child(1) { background: var(--or); } .flag i:nth-child(2) { background: #fff; } .flag i:nth-child(3) { background: var(--vert); }
+  .flag b { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--or); left: 50%; top: 50%; transform: translate(-50%,-50%); }
+  .lead { max-width: 720px; color: #e8dccb; font-size: 16px; line-height: 1.5; margin: 18px 0 26px; }
+  h2 { font-family: 'Bebas Neue', Impact; font-size: 30px; letter-spacing: 2px; margin: 26px 0 12px; color: #fff; }
+  .regions { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .region { position: relative; border-radius: 14px; padding: 16px 16px 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+    cursor: pointer; transition: transform .15s, border-color .15s, background .15s; min-height: 118px; }
+  .region:hover { transform: translateY(-2px); border-color: rgba(255,210,58,.6); }
+  .region.sel { background: linear-gradient(135deg, rgba(224,82,6,.35), rgba(13,176,43,.25)); border-color: var(--jaune); }
+  .region.lock { opacity: .62; cursor: not-allowed; }
+  .region h3 { margin: 0 0 6px; font-family: 'Bebas Neue', Impact; font-size: 28px; letter-spacing: 1.5px; }
+  .region p { margin: 0; font-size: 13.5px; color: #e2d6c4; line-height: 1.4; }
+  .region .badge { position: absolute; top: 12px; right: 12px; font-size: 11px; font-weight: 800; letter-spacing: 1px; padding: 4px 8px; border-radius: 99px; background: var(--vert); color: #fff; }
+  .region.lock .badge { background: rgba(255,255,255,.18); }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 26px; }
+  .qual { display: flex; gap: 6px; background: rgba(0,0,0,.35); padding: 5px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); flex-wrap: wrap; }
+  .qual button { border: 0; background: transparent; color: #ddd; font: 600 14px Inter; padding: 10px 14px; border-radius: 9px; cursor: pointer; }
+  .qual button.on { background: var(--blanc); color: #111; }
+  .play { font-family: 'Bebas Neue', Impact; font-size: 34px; letter-spacing: 3px; border: 0; cursor: pointer; padding: 12px 44px; border-radius: 12px; color: #111;
+    background: linear-gradient(180deg, #ffe680, var(--jaune) 60%, #e0a800); box-shadow: 0 6px 0 #8a6400, 0 10px 30px rgba(255,210,58,.3); }
+  .play:active { transform: translateY(3px); box-shadow: 0 3px 0 #8a6400; }
+  .keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 18px; font-size: 14px; color: #e2d6c4; }
+  kbd { display: inline-block; min-width: 26px; text-align: center; padding: 2px 7px; border-radius: 6px; background: #f2ece2; color: #111; font: 700 12px Inter; box-shadow: 0 2px 0 #9a8a70; margin-right: 4px; }
+  .note { font-size: 12.5px; color: #b9a990; margin-top: 26px; line-height: 1.5; }
+
+  /* ---------- CHARGEMENT ---------- */
+  #loading { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: #0b0b0d; }
+  #loading .box { width: min(420px, 86vw); text-align: center; }
+  #loading h2 { font-size: 44px; margin: 0 0 16px; }
+  #loading .bar { height: 6px; background: rgba(255,255,255,.15); border-radius: 9px; overflow: hidden; }
+  #loadbar { height: 100%; width: 0; background: linear-gradient(90deg, var(--or), #fff, var(--vert)); transition: width .2s; }
+  #loading p { color: #b9a990; font-size: 13px; margin-top: 14px; }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; font-family: Inter, sans-serif; }
+  .shadow { text-shadow: 0 2px 0 #000, 0 0 8px rgba(0,0,0,.8), 2px 0 0 #000, -2px 0 0 #000, 0 -2px 0 #000; }
+  #topright { position: absolute; top: 18px; right: 22px; text-align: right; }
+  #clock { font-family: 'Bebas Neue', Impact; font-size: 30px; letter-spacing: 1px; }
+  #money { font-family: 'Bebas Neue', Impact; font-size: 40px; color: #8fe08a; letter-spacing: 1px; }
+  #stars { font-size: 30px; letter-spacing: 2px; }
+  #stars b { color: rgba(255,255,255,.18); -webkit-text-stroke: 1px rgba(0,0,0,.6); }
+  #stars b.on { color: #fff; } #stars b.on.flash { color: #ffd23a; }
+  #minimapbox { position: absolute; left: 22px; bottom: 22px; width: 270px; }
+  #minimap { width: 270px; height: 175px; border-radius: 10px; border: 3px solid rgba(0,0,0,.65); display: block; box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+  #healthbar { height: 7px; margin-top: 5px; background: rgba(0,0,0,.6); border-radius: 4px; overflow: hidden; }
+  #vhealth { height: 100%; width: 100%; background: linear-gradient(90deg, #4caf50, #8be07a); }
+  #zone { position: absolute; right: 26px; bottom: 26px; text-align: right; font-family: 'Bebas Neue', Impact; font-size: 44px; letter-spacing: 1.5px; opacity: 0; transition: opacity .6s; }
+  #zone.show { opacity: 1; }
+  #zone small { display: block; font-family: Inter; font-size: 15px; font-weight: 600; letter-spacing: 0; color: #e8dccb; }
+  #speed { position: absolute; right: 26px; bottom: 100px; font-family: 'Bebas Neue', Impact; font-size: 26px; text-align: right; }
+  #speed b { font-size: 58px; font-weight: 400; }
+  #help { position: absolute; top: 18px; left: 18px; max-width: 420px; background: rgba(0,0,0,.72); padding: 12px 16px; border-radius: 8px; font-size: 14.5px; line-height: 1.55; }
+  #toast { position: absolute; top: 18px; left: 50%; transform: translate(-50%, -140%); width: min(520px, 90vw); background: rgba(10,10,12,.86); border-left: 5px solid var(--jaune);
+    padding: 12px 18px; border-radius: 8px; transition: transform .45s; }
+  #toast.show { transform: translate(-50%, 0); }
+  #toast h4 { margin: 0 0 4px; font-family: 'Bebas Neue', Impact; font-size: 26px; letter-spacing: 1px; color: var(--jaune); }
+  #toast p { margin: 0; font-size: 14px; line-height: 1.45; color: #eee; }
+  #subtitle { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); width: min(820px, 92vw); text-align: center; font-size: 19px; line-height: 1.45; font-weight: 600; }
+  #objective { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); font-size: 17px; font-weight: 600; background: rgba(0,0,0,.55); padding: 6px 14px; border-radius: 6px; white-space: nowrap; }
+  #bigtext { position: absolute; left: 0; right: 0; top: 38%; text-align: center; font-family: 'Bebas Neue', Impact; font-size: clamp(60px, 11vw, 130px); letter-spacing: 4px;
+    text-shadow: 0 5px 0 #000, 0 0 30px rgba(0,0,0,.8); animation: pop .5s ease-out; }
+  @keyframes pop { from { transform: scale(1.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  #perf { position: absolute; left: 18px; bottom: 210px; font: 600 12px ui-monospace, monospace; background: rgba(0,0,0,.55); padding: 4px 8px; border-radius: 5px; color: #9fe39a; }
+  #bigmap { position: fixed; inset: 0; z-index: 15; width: 100%; height: 100%; }
+  #pause { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); }
+  #pause .box { text-align: center; } #pause h2 { font-size: 70px; margin: 0 0 18px; }
+  #pause button { display: block; width: 280px; margin: 10px auto; padding: 12px; font: 700 16px Inter; border: 0; border-radius: 10px; cursor: pointer; background: #f2ece2; color: #111; }
+
+  /* tactile */
+  #touch { position: fixed; inset: 0; z-index: 12; pointer-events: none; }
+  #stick { position: absolute; left: 30px; bottom: 210px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.3); pointer-events: auto; }
+  #stick i { position: absolute; left: 40px; top: 40px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,.55); }
+  #tbtn { position: absolute; right: 24px; bottom: 170px; display: grid; grid-template-columns: repeat(2, 70px); gap: 12px; pointer-events: auto; }
+  #tbtn button { width: 70px; height: 70px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); background: rgba(0,0,0,.45); color: #fff; font: 800 14px Inter; }
+
+  @media (max-width: 700px) {
+    #minimapbox { width: 170px; left: 12px; bottom: 12px; } #minimap { width: 170px; height: 120px; }
+    #zone { font-size: 28px; right: 14px; bottom: 14px; } #money { font-size: 28px; } #stars { font-size: 22px; } #clock { font-size: 22px; }
+    #subtitle { font-size: 15px; bottom: 150px; } #help { font-size: 12.5px; max-width: 60vw; } #perf { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<section id="menu">
+  <div class="wrap">
+    <div class="brand">
+      <span class="flag"><i></i><i></i><i></i><b></b></span>
+      <h1>NIGER CITY</h1>
+      <div class="tag">Chapitre 1 · Niamey</div>
+    </div>
+    <p class="lead">Un monde ouvert inspiré du Niger. Roule en kabou-kabou dans les ruelles de latérite, fais le taxi rouge et blanc,
+      traverse le fleuve par le pont Kennedy, découvre la Grande Mosquée, le Grand Marché et le musée Boubou Hama… et évite la Police Nationale.</p>
+
+    <h2>Choisis ta région</h2>
+    <div class="regions" id="regions"></div>
+
+    <div class="row">
+      <div class="qual" id="qual">
+        <button data-q="basse">Basse</button><button data-q="moyenne">Moyenne</button><button data-q="haute">Haute</button><button data-q="ultra">Ultra</button>
+      </div>
+      <button class="play" id="play">JOUER</button>
+    </div>
+
+    <h2>Commandes</h2>
+    <div class="keys">
+      <div><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> / flèches : se déplacer, conduire</div>
+      <div><kbd>E</kbd> : monter / descendre d'un véhicule</div>
+      <div><kbd>Maj</kbd> : courir · <kbd>Espace</kbd> : sauter</div>
+      <div><kbd>Espace</kbd> en voiture : frein à main (dérapage)</div>
+      <div><kbd>H</kbd> : klaxon · <kbd>T</kbd> : service de taxi</div>
+      <div><kbd>M</kbd> : grande carte · <kbd>C</kbd> : caméra</div>
+      <div>Souris : regarder (clic pour capturer)</div>
+      <div><kbd>P</kbd> : pause · <kbd>N</kbd> : son · <kbd>I</kbd> : performances</div>
+    </div>
+    <p class="note">Plan de Niamey stylisé (pas à l'échelle). Textures photo libres de droits (CC0, Poly Haven). Prototype web pour mesurer les performances :
+      l'affichage <kbd>I</kbd> donne les FPS, les appels de dessin et les triangles ; la résolution baisse toute seule si le jeu rame.</p>
+  </div>
+</section>
+
+<div id="loading" hidden><div class="box"><h2>NIAMEY</h2><div class="bar"><div id="loadbar"></div></div><p>Chargement des textures et construction de la ville…</p></div></div>
+
+<div id="hud" hidden>
+  <div id="topright" class="shadow"><div id="clock">16:00</div><div id="money">5 000 FCFA</div><div id="stars"></div></div>
+  <div id="minimapbox"><canvas id="minimap" width="270" height="175"></canvas><div id="healthbar" hidden><div id="vhealth"></div></div></div>
+  <div id="zone" class="shadow"></div>
+  <div id="speed" class="shadow" hidden></div>
+  <div id="help" hidden></div>
+  <div id="toast"></div>
+  <div id="subtitle" class="shadow" hidden></div>
+  <div id="objective" hidden></div>
+  <div id="bigtext" hidden></div>
+  <div id="perf">…</div>
+</div>
+<canvas id="bigmap" hidden></canvas>
+
+<div id="pause" hidden><div class="box">
+  <h2>PAUSE</h2>
+  <button id="resume">Reprendre</button>
+  <button id="reset">Effacer la sauvegarde</button>
+  <button id="quit">Menu principal</button>
+</div></div>
+
+<div id="touch" hidden>
+  <div id="stick"><i></i></div>
+  <div id="tbtn"><button data-key="KeyE">E</button><button data-key="Space">FREIN</button><button data-key="KeyH">KLAX</button><button data-key="KeyM">CARTE</button></div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/" } }
+</script>
+<script type="module">
+  const REGIONS = [
+    { id: 'niamey', name: 'Niamey', ok: true, txt: 'La capitale au bord du fleuve Niger : Plateau, Grand Marché, Grande Mosquée, pont Kennedy, rive droite.' },
+    { id: 'agadez', name: 'Agadez', txt: 'Porte du désert : la Grande Mosquée en banco et son minaret de 27 m, l\'Aïr et le Ténéré.' },
+    { id: 'zinder', name: 'Zinder', txt: 'L\'ancienne capitale du Damagaram : le palais du Sultan et le vieux quartier de Birni.' },
+    { id: 'maradi', name: 'Maradi', txt: 'La capitale économique, carrefour commercial avec le Nigeria.' },
+    { id: 'tahoua', name: 'Tahoua', txt: 'Plateaux et vallées de l\'Ader, élevage et grands marchés hebdomadaires.' },
+    { id: 'dosso', name: 'Dosso', txt: 'Le palais du Djermakoye et les terres zarma entre Niamey et le Bénin.' },
+    { id: 'tillaberi', name: 'Tillabéri', txt: 'Le long du fleuve, les dernières girafes blanches d\'Afrique de l\'Ouest à Kouré.' },
+    { id: 'diffa', name: 'Diffa', txt: 'L\'est du pays : la Komadougou Yobé et les rives du lac Tchad.' },
+  ];
+  const box = document.getElementById('regions');
+  for (const r of REGIONS) {
+    const d = document.createElement('div');
+    d.className = 'region' + (r.ok ? ' sel' : ' lock');
+    d.innerHTML = `<span class="badge">${r.ok ? 'JOUABLE' : 'BIENTÔT'}</span><h3>${r.name}</h3><p>${r.txt}</p>`;
+    box.appendChild(d);
+  }
+  let q = 'moyenne';
+  try { q = localStorage.getItem('nigercity_q') || q; } catch {}
+  const qual = document.getElementById('qual');
+  const setQ = (v) => { q = v; for (const b of qual.children) b.classList.toggle('on', b.dataset.q === v); };
+  setQ(q);
+  qual.addEventListener('click', (e) => e.target.dataset.q && setQ(e.target.dataset.q));
+
+  document.getElementById('play').addEventListener('click', async () => {
+    try { localStorage.setItem('nigercity_q', q); } catch {}
+    document.getElementById('menu').hidden = true;
+    document.getElementById('loading').hidden = false;
+    const { startGame } = await import('./js/main.js');
+    const g = await startGame(q);
+    window.__game = g;
+    document.getElementById('resume').onclick = () => g.togglePause(false);
+    document.getElementById('quit').onclick = () => { g.persist(); location.reload(); };
+    document.getElementById('reset').onclick = () => { g.persist = () => {}; try { localStorage.removeItem('nigercity_save_v1'); } catch {} location.reload(); };
+  });
+</script>
+</body>
+</html>
